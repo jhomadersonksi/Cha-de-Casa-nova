@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chá de Casa Nova da Ana</title>
+<title>Chá de Casa Nova</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
 <style>
   :root {
@@ -59,30 +61,87 @@
   .select-btn:hover { background: var(--gold); }
   .select-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
 
-  /* MODALS */
+  /* MODALS BASE */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(26,21,18,0.72); z-index: 1000; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
   .modal-overlay.open { display: flex; }
-  .modal, .edit-modal, .admin-panel { background: var(--white); padding: 40px; position: relative; animation: slideUp .3s ease; }
-  .modal { max-width: 480px; width: 100%; margin: auto; }
-  .edit-modal { max-width: 600px; width: 100%; margin: auto; max-height: 90vh; overflow-y: auto; }
+  .modal { background: var(--white); max-width: 480px; width: 100%; padding: 40px; position: relative; animation: slideUp .3s ease; margin: auto; }
+  .edit-modal { background: var(--white); max-width: 600px; width: 100%; padding: 40px; position: relative; animation: slideUp .3s ease; margin: auto; max-height: 90vh; overflow-y: auto; }
   @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   .modal-close { position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); }
-  
+  .modal h2, .edit-modal h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 300; margin-bottom: 4px; }
+  .modal > p, .edit-modal > p { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; }
+
+  /* GUEST MODAL EXTRAS */
+  .modal-gift-img { width: 100%; height: 160px; object-fit: cover; border: 1px solid var(--border); margin-bottom: 16px; display: block; }
+  .modal-buy-banner { display: flex; align-items: center; justify-content: space-between; background: var(--cream); border: 1px solid var(--border); padding: 12px 16px; margin-bottom: 20px; gap: 12px; }
+  .modal-buy-banner span { font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+  .modal-buy-banner a { white-space: nowrap; padding: 8px 16px; background: var(--dark); color: var(--cream); font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; text-decoration: none; transition: background .2s; flex-shrink: 0; }
+  .modal-buy-banner a:hover { background: var(--gold); }
+  .modal-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .modal-divider::before, .modal-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
   /* FORMS */
-  input, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); background: var(--cream); font-family: 'Jost', sans-serif; margin-bottom: 15px; outline: none; }
-  .confirm-btn, .admin-add-btn, .btn-save { width: 100%; padding: 14px; background: var(--gold); color: var(--white); border: none; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; }
-  
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--dark); color: var(--cream); padding: 14px 28px; z-index: 9999; opacity: 0; transition: opacity .3s; }
-  .toast.show { opacity: 1; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .form-group textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); background: var(--cream); font-family: 'Jost', sans-serif; font-size: 0.9rem; color: var(--dark); outline: none; transition: border-color .2s; resize: vertical; }
+  .form-group textarea:focus { border-color: var(--gold); }
+  .confirm-btn { width: 100%; padding: 14px; background: var(--gold); color: var(--white); border: none; font-family: 'Jost', sans-serif; font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; transition: background .2s; margin-top: 8px; }
+  .confirm-btn:hover { background: var(--dark); }
+  .confirm-btn:disabled { background: var(--border); cursor: not-allowed; }
+
+  /* EDIT MODAL INPUTS */
+  .edit-modal input, .edit-modal textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); background: var(--cream); font-family: 'Jost', sans-serif; font-size: 0.9rem; margin-bottom: 10px; color: var(--dark); outline: none; transition: border-color .2s; }
+  .edit-modal input:focus, .edit-modal textarea:focus { border-color: var(--gold); }
+  .edit-modal textarea { height: 70px; resize: vertical; }
+  .edit-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .edit-actions { display: flex; gap: 10px; margin-top: 8px; }
+  .btn-save { flex: 1; padding: 12px; background: var(--gold); color: var(--white); border: none; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: background .2s; }
+  .btn-save:hover { background: var(--dark); }
+  .btn-cancel { padding: 12px 20px; background: none; color: var(--muted); border: 1px solid var(--border); font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+  .btn-cancel:hover { border-color: var(--dark); color: var(--dark); }
+
+  /* ADMIN */
+  .admin-overlay { display: none; position: fixed; inset: 0; background: rgba(26,21,18,0.88); z-index: 2000; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+  .admin-overlay.open { display: flex; }
+  .admin-panel { background: var(--white); max-width: 700px; width: 100%; margin: 40px auto; padding: 40px; position: relative; }
+  .admin-panel h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; margin-bottom: 4px; }
+  .admin-panel > p { font-size: 0.85rem; color: var(--muted); margin-bottom: 30px; }
+  .admin-section { margin-bottom: 32px; }
+  .admin-section h3 { font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .admin-section input, .admin-section textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); background: var(--cream); font-family: 'Jost', sans-serif; font-size: 0.9rem; margin-bottom: 10px; color: var(--dark); outline: none; }
+  .admin-section textarea { height: 70px; resize: vertical; }
+  .admin-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .admin-add-btn { padding: 10px 24px; background: var(--dark); color: var(--cream); border: none; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; }
+  .admin-add-btn:hover { background: var(--gold); }
+  .admin-gift-list { list-style: none; }
+  .admin-gift-item { display: flex; align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 0.88rem; gap: 6px; }
+  .admin-gift-item .item-name { flex: 1; }
+  .admin-gift-item .taken-tag { font-size: 0.7rem; color: var(--gold); white-space: nowrap; }
+  .del-btn { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 1rem; padding: 2px 4px; flex-shrink: 0; }
+  .edit-btn { background: none; border: 1px solid var(--border); color: var(--muted); cursor: pointer; font-size: 0.72rem; padding: 4px 10px; flex-shrink: 0; font-family: 'Jost', sans-serif; letter-spacing: 0.1em; text-transform: uppercase; transition: all .2s; }
+  .edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .config-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .config-row input { margin-bottom: 0; flex: 1; }
+  .save-config-btn { padding: 10px 20px; background: var(--gold); color: var(--white); border: none; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+  .password-screen { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 40px 0; }
+  .password-screen input { padding: 12px; border: 1px solid var(--border); font-family: 'Jost', sans-serif; font-size: 1rem; text-align: center; width: 200px; background: var(--cream); }
+  .password-screen button { padding: 10px 32px; background: var(--dark); color: var(--cream); border: none; cursor: pointer; font-family: 'Jost', sans-serif; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.78rem; }
+  #admin-content { display: none; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--dark); color: var(--cream); padding: 14px 28px; font-size: 0.85rem; letter-spacing: 0.05em; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity .3s; white-space: nowrap; }
+  .toast.show { opacity: 1; pointer-events: auto; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state p { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-style: italic; }
 </style>
 </head>
 <body>
 
 <header>
   <span class="header-ornament">✦ ✦ ✦</span>
-  <h1 id="host-names">Chá de Casa Nova da <em>Ana</em></h1>
-  <p>Joinville, SC — 2026</p>
-  <div class="date-badge" id="event-date-display">Carregando data...</div>
+  <h1 id="host-names"><em>Ana</em></h1>
+  <p>Chá de Casa Nova — Lista de Presentes</p>
+  <div class="date-badge" id="event-date-display">14 de Junho de 2026</div>
   <button class="admin-btn" onclick="openAdmin()">⚙ Admin</button>
 </header>
 
@@ -94,7 +153,9 @@
 
 <div class="container">
   <div class="section-title">Escolha seu presente</div>
-  <div class="gifts-grid" id="gifts-grid"></div>
+  <div class="gifts-grid" id="gifts-grid">
+    <div class="empty-state" style="grid-column:1/-1"><p>Nenhum item cadastrado ainda</p></div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="guest-modal">
@@ -102,34 +163,121 @@
     <button class="modal-close" onclick="closeModal()">×</button>
     <h2 id="modal-gift-name"></h2>
     <p id="modal-gift-desc"></p>
-    <img id="modal-gift-img" class="modal-gift-img" style="width:100%; max-height:200px; object-fit:cover; margin-bottom:15px; display:none">
-    <div id="modal-buy-banner" style="background:#f0f0f0; padding:10px; margin-bottom:15px; display:none">
-      <a id="modal-buy-link" href="#" target="_blank" style="color:var(--gold)">Ver sugestão de compra →</a>
+    <img id="modal-gift-img" class="modal-gift-img" src="" alt="" style="display:none">
+    <div class="modal-buy-banner" id="modal-buy-banner" style="display:none">
+      <span>💡 Veja onde encontrar este item antes de confirmar</span>
+      <a id="modal-buy-link" href="#" target="_blank" rel="noopener">Ver sugestão →</a>
     </div>
-    <textarea id="guest-message" placeholder="Deixe uma mensagem para o casal..." rows="3"></textarea>
+    <div class="modal-divider">Deixe uma mensagem</div>
+    <div class="form-group">
+      <label>Mensagem de carinho (opcional)</label>
+      <textarea id="guest-message" placeholder="Ex: Com muito amor para você! 🏠" rows="3"></textarea>
+    </div>
     <button class="confirm-btn" id="confirm-btn" onclick="confirmGift()">Confirmar Presente 🎁</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-modal-overlay">
+  <div class="edit-modal">
+    <button class="modal-close" onclick="closeEditModal()">×</button>
+    <h2>Editar Item</h2>
+    <p>Altere as informações do presente abaixo</p>
+    <input type="hidden" id="edit-id">
+    <input type="text" id="edit-name" placeholder="Nome do item *">
+    <textarea id="edit-desc" placeholder="Descrição (opcional)"></textarea>
+    <div class="edit-grid-2">
+      <input type="text" id="edit-price" placeholder="R$ 0,00" oninput="maskCurrency(this)">
+      <input type="text" id="edit-category" placeholder="Categoria">
+    </div>
+    <label style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;margin-top:2px">Foto do Item</label>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+      <label style="flex:1;padding:10px 12px;border:1px dashed var(--border);background:var(--cream);cursor:pointer;font-size:0.82rem;color:var(--muted);display:flex;align-items:center;gap:8px">
+        <span>📁</span><span id="edit-upload-label">Clique para trocar a foto</span>
+        <input type="file" id="edit-photo-file" accept="image/*" style="display:none" onchange="handleEditPhotoUpload(event)">
+      </label>
+      <span style="font-size:0.75rem;color:var(--muted);white-space:nowrap">ou</span>
+      <input type="text" id="edit-photo-url" placeholder="URL da imagem" style="flex:1;margin-bottom:0" oninput="previewEditUrl(this)">
+    </div>
+    <div id="edit-photo-preview" style="display:none;margin-bottom:10px">
+      <img id="edit-photo-preview-img" style="width:100%;max-height:140px;object-fit:cover;border:1px solid var(--border)">
+      <button onclick="clearEditPhoto()" style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer">✕ Remover foto</button>
+    </div>
+    <input type="text" id="edit-buy-link" placeholder="🔗 Link de sugestão de onde comprar">
+    <div class="edit-actions">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveEdit()">Salvar Alterações</button>
+    </div>
   </div>
 </div>
 
 <div class="admin-overlay" id="admin-overlay">
   <div class="admin-panel">
-    <button class="modal-close" onclick="closeAdmin()">×</button>
+    <button class="modal-close" onclick="closeAdmin()" style="font-size:1.6rem">×</button>
     <h2>Painel Admin</h2>
-    <div id="password-screen" class="password-screen">
-      <input type="password" id="admin-password-input" placeholder="Senha de acesso">
-      <button onclick="checkPassword()" style="width:100%; padding:10px; background:var(--dark); color:white">Entrar</button>
+    <p>Gerencie a lista do chá de casa nova</p>
+    <div class="password-screen" id="password-screen">
+      <p style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic">Digite a senha de acesso</p>
+      <input type="password" id="admin-password-input" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPassword()">
+      <button onclick="checkPassword()">Entrar</button>
     </div>
-    <div id="admin-content" style="display:none; max-height:70vh; overflow-y:auto">
+    <div id="admin-content">
       <div class="admin-section">
-        <h3>Novo Item</h3>
-        <input type="text" id="new-name" placeholder="Nome do item">
-        <input type="text" id="new-price" placeholder="Preço (ex: R$ 50,00)">
-        <input type="text" id="new-category" placeholder="Categoria">
-        <input type="text" id="new-photo-url" placeholder="URL da Foto">
-        <button class="admin-add-btn" onclick="addGift()">Adicionar Item</button>
+        <h3>Informações do Evento</h3>
+        <input type="text" id="cfg-names" placeholder="Nome(s) do(s) anfitrião(ões)">
+        <input type="text" id="cfg-date" placeholder="Data do evento">
+        <div class="config-row">
+          <input type="email" id="cfg-email" placeholder="E-mail para notificações">
+          <button class="save-config-btn" onclick="saveConfig()">Salvar</button>
+        </div>
+        <div class="config-row" style="margin-top:4px">
+          <input type="password" id="cfg-password" placeholder="Nova senha de admin (deixe em branco para manter)">
+          <button class="save-config-btn" onclick="savePassword()">Salvar Senha</button>
+        </div>
       </div>
-      <hr style="margin:20px 0">
-      <div id="admin-gift-list"></div>
+      <div class="admin-section">
+        <h3>Configuração de E-mail (EmailJS)</h3>
+        <p style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">Crie conta gratuita em <strong>emailjs.com</strong>. Variáveis: <strong>{{to_email}}, {{gift_name}}, {{guest_message}}, {{event_date}}</strong></p>
+        <input type="text" id="cfg-ejs-public" placeholder="Public Key">
+        <div class="admin-grid-2">
+          <input type="text" id="cfg-ejs-service" placeholder="Service ID">
+          <input type="text" id="cfg-ejs-template" placeholder="Template ID">
+        </div>
+        <button class="save-config-btn" onclick="saveEmailConfig()">Salvar Config de E-mail</button>
+      </div>
+      <div class="admin-section">
+        <h3>Adicionar Item</h3>
+        <input type="text" id="new-name" placeholder="Nome do item *">
+        <textarea id="new-desc" placeholder="Descrição (opcional)"></textarea>
+        <div class="admin-grid-2">
+          <input type="text" id="new-price" placeholder="R$ 0,00" oninput="maskCurrency(this)">
+          <input type="text" id="new-category" placeholder="Categoria (ex: Cozinha)">
+        </div>
+        <label style="font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px">Foto do Item</label>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
+          <label style="flex:1;padding:10px 12px;border:1px dashed var(--border);background:var(--cream);cursor:pointer;font-size:0.82rem;color:var(--muted);display:flex;align-items:center;gap:8px">
+            <span>📁</span><span id="upload-label">Clique para fazer upload de foto</span>
+            <input type="file" id="new-photo-file" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+          </label>
+          <span style="font-size:0.75rem;color:var(--muted);white-space:nowrap">ou</span>
+          <input type="text" id="new-photo-url" placeholder="Cole a URL da imagem" style="flex:1;margin-bottom:0">
+        </div>
+        <div id="photo-preview" style="display:none;margin-bottom:10px">
+          <img id="photo-preview-img" style="width:100%;max-height:160px;object-fit:cover;border:1px solid var(--border)">
+          <button onclick="clearPhoto()" style="margin-top:6px;background:none;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer">✕ Remover foto</button>
+        </div>
+        <input type="text" id="new-buy-link" placeholder="🔗 Link de sugestão de onde comprar">
+        <button class="admin-add-btn" onclick="addGift()">+ Adicionar Item</button>
+      </div>
+      <div class="admin-section">
+        <h3>Itens Cadastrados (<span id="admin-count">0</span>)</h3>
+        <ul class="admin-gift-list" id="admin-gift-list"></ul>
+      </div>
+      <div class="admin-section">
+        <h3>Itens Escolhidos</h3>
+        <ul class="admin-gift-list" id="admin-taken-list">
+          <li style="font-size:0.85rem;color:var(--muted);padding:10px">Nenhum item foi selecionado ainda.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
@@ -137,150 +285,350 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// --- CONFIGURAÇÃO SUPABASE ---
-const supabaseUrl = 'https://ivimfxsrbddavpeipvgn.supabase.co';
-const supabaseKey = 'sb_publishable_K0Qz1IGa6tzB_BFMvxno5w_RXTsuY6LND7l0Wstn49uN4R3I4O5H'; 
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// INICIALIZAÇÃO FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyCFLepJeSM2cOk-aRGaa0rW7GmBGpWJdb4",
+  authDomain: "cha-de-casa-nova-ee9ba.firebaseapp.com",
+  projectId: "cha-de-casa-nova-ee9ba",
+  storageBucket: "cha-de-casa-nova-ee9ba.firebasestorage.app",
+  messagingSenderId: "392719783396",
+  appId: "1:392719783396:web:4fca4f0b463319670823f1",
+  measurementId: "G-WR4N3XM8GK"
+};
 
-// Configurações Locais
-let config = JSON.parse(localStorage.getItem('cdn_config') || '{"names":"Ana","date":"Junho de 2026","password":"1234"}');
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 let gifts = [];
+let config = JSON.parse(localStorage.getItem('cdn_config') || '{"names":"Ana","date":"Junho de 2026","email":"","password":"1234","ejsPublic":"","ejsService":"","ejsTemplate":""}');
 let selectedGiftId = null;
+let editPhotoBase64 = null;
 
-async function init() {
-    applyConfig();
-    await fetchGifts();
-}
+applyConfig();
 
-async function fetchGifts() {
-    const { data, error } = await supabase
-        .from('gifts')
-        .select('*')
-        .order('created_at', { ascending: false });
-    
-    if (error) {
-        showToast("Erro ao carregar banco de dados");
-    } else {
-        gifts = data;
-        renderGifts();
-    }
-}
+// LISTENER EM TEMPO REAL DO FIREBASE
+db.collection("presentes").onSnapshot((snapshot) => {
+  gifts = [];
+  snapshot.forEach((doc) => {
+    gifts.push({ id: doc.id, ...doc.data() });
+  });
+  renderGifts();
+  if (document.getElementById('admin-content').style.display === 'block') {
+    renderAdminList();
+  }
+});
 
+// CONFIG
 function applyConfig() {
-    document.getElementById('event-date-display').textContent = config.date;
+  const parts = config.names.split('&');
+  document.getElementById('host-names').innerHTML = parts.length === 2
+    ? `<em>${parts[0].trim()}</em> & <em>${parts[1].trim()}</em>`
+    : config.names;
+  document.getElementById('event-date-display').textContent = config.date;
+  document.title = `Chá de Casa Nova — ${config.names}`;
+}
+function saveConfig() {
+  config.names = document.getElementById('cfg-names').value || config.names;
+  config.date  = document.getElementById('cfg-date').value  || config.date;
+  config.email = document.getElementById('cfg-email').value;
+  localStorage.setItem('cdn_config', JSON.stringify(config));
+  applyConfig(); showToast('Configurações salvas!');
+}
+function savePassword() {
+  const np = document.getElementById('cfg-password').value.trim();
+  if (!np) { showToast('Digite uma nova senha.'); return; }
+  config.password = np;
+  localStorage.setItem('cdn_config', JSON.stringify(config));
+  document.getElementById('cfg-password').value = '';
+  showToast('Senha atualizada!');
+}
+function saveEmailConfig() {
+  config.ejsPublic   = document.getElementById('cfg-ejs-public').value;
+  config.ejsService  = document.getElementById('cfg-ejs-service').value;
+  config.ejsTemplate = document.getElementById('cfg-ejs-template').value;
+  localStorage.setItem('cdn_config', JSON.stringify(config));
+  showToast('Config de e-mail salva!');
 }
 
+// RENDER GIFTS
 function renderGifts() {
-    const grid = document.getElementById('gifts-grid');
-    const total = gifts.length;
-    const taken = gifts.filter(g => g.taken).length;
-    
-    document.getElementById('stat-total').textContent = total;
-    document.getElementById('stat-available').textContent = total - taken;
-    document.getElementById('stat-taken').textContent = taken;
-
-    if (total === 0) {
-        grid.innerHTML = '<p class="empty-state">Nenhum item cadastrado.</p>';
-        return;
-    }
-
-    grid.innerHTML = gifts.map(g => `
-        <div class="gift-card ${g.taken ? 'taken' : ''}">
-            ${g.image ? `<img class="gift-img" src="${g.image}">` : `<div class="gift-img-placeholder">🏠</div>`}
-            <div class="gift-body">
-                <div class="gift-category">${g.category || 'Geral'}</div>
-                <div class="gift-name">${g.name}</div>
-                <div class="gift-price">${g.price || ''}</div>
-                <button class="select-btn" onclick="openGuestModal('${g.id}')" ${g.taken ? 'disabled' : ''}>
-                    ${g.taken ? '✓ Escolhido' : 'Quero dar este'}
-                </button>
-            </div>
+  const grid  = document.getElementById('gifts-grid');
+  const total = gifts.length;
+  const taken = gifts.filter(g => g.taken).length;
+  document.getElementById('stat-total').textContent     = total;
+  document.getElementById('stat-available').textContent = total - taken;
+  document.getElementById('stat-taken').textContent     = taken;
+  if (!total) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Nenhum item cadastrado ainda</p></div>';
+    return;
+  }
+  grid.innerHTML = gifts.map(g => `
+    <div class="gift-card ${g.taken ? 'taken' : ''}">
+      ${g.image ? `<img class="gift-img" src="${g.image}" alt="${g.name}" onerror="this.style.display='none'">` : `<div class="gift-img-placeholder">🏠</div>`}
+      <div class="gift-body">
+        ${g.category ? `<div class="gift-category">${g.category}</div>` : ''}
+        <div class="gift-name">${g.name}</div>
+        ${g.description ? `<div class="gift-description">${g.description}</div>` : ''}
+        <div class="gift-footer">
+          ${g.price ? `<div class="gift-price">${g.price}</div>` : '<div></div>'}
         </div>
-    `).join('');
+        <button class="select-btn" onclick="openGuestModal('${g.id}')" ${g.taken ? 'disabled' : ''}>
+          ${g.taken ? '✓ Escolhido' : 'Quero dar este presente'}
+        </button>
+      </div>
+    </div>
+  `).join('');
 }
 
+// GUEST MODAL
 function openGuestModal(id) {
-    const g = gifts.find(x => x.id === id);
-    selectedGiftId = id;
-    document.getElementById('modal-gift-name').textContent = g.name;
-    const img = document.getElementById('modal-gift-img');
-    if(g.image) { img.src = g.image; img.style.display = 'block'; }
-    document.getElementById('guest-modal').classList.add('open');
+  const g = gifts.find(x => x.id === id);
+  if (!g || g.taken) return;
+  selectedGiftId = id;
+  document.getElementById('modal-gift-name').textContent = g.name;
+  document.getElementById('modal-gift-desc').textContent = g.price || g.description || '';
+  const imgEl = document.getElementById('modal-gift-img');
+  imgEl.style.display = g.image ? 'block' : 'none';
+  if (g.image) imgEl.src = g.image;
+  const banner = document.getElementById('modal-buy-banner');
+  banner.style.display = g.buyLink ? 'flex' : 'none';
+  if (g.buyLink) document.getElementById('modal-buy-link').href = g.buyLink;
+  document.getElementById('guest-message').value = '';
+  document.getElementById('guest-modal').classList.add('open');
 }
-
-function closeModal() { document.getElementById('guest-modal').classList.remove('open'); }
-
+function closeModal() {
+  document.getElementById('guest-modal').classList.remove('open');
+  selectedGiftId = null;
+}
 async function confirmGift() {
-    const msg = document.getElementById('guest-message').value;
-    const { error } = await supabase
-        .from('gifts')
-        .update({ 
-            taken: true, 
-            taken_message: msg, 
-            taken_at: new Date().toISOString() 
-        })
-        .eq('id', selectedGiftId);
-
-    if (!error) {
-        showToast("🎉 Obrigado pelo presente!");
-        closeModal();
-        await fetchGifts();
-    }
+  const msg = document.getElementById('guest-message').value.trim();
+  const g   = gifts.find(x => x.id === selectedGiftId);
+  if (!g) return;
+  
+  const takenAt = new Date().toLocaleString('pt-BR');
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  
+  try {
+    // Salva no Firebase
+    await db.collection("presentes").doc(selectedGiftId).update({
+      taken: true,
+      takenMessage: msg,
+      takenAt: takenAt
+    });
+    
+    // Tenta enviar o email
+    g.takenAt = takenAt;
+    await sendEmail(g, msg);
+    showToast('🎉 Presente confirmado! Muito obrigado!');
+  } catch(e) {
+    showToast('Presente confirmado! (E-mail não configurado)');
+  }
+  closeModal();
+  btn.disabled = false; btn.textContent = 'Confirmar Presente 🎁';
+}
+async function sendEmail(gift, guestMsg) {
+  if (!config.ejsPublic || !config.ejsService || !config.ejsTemplate) return;
+  emailjs.init(config.ejsPublic);
+  await emailjs.send(config.ejsService, config.ejsTemplate, {
+    to_email: config.email, gift_name: gift.name,
+    gift_price: gift.price || 'N/A', guest_message: guestMsg || 'Nenhuma mensagem',
+    event_date: config.date, taken_at: gift.takenAt,
+  });
 }
 
-function openAdmin() { document.getElementById('admin-overlay').classList.add('open'); }
+// ADMIN
+function openAdmin() {
+  document.getElementById('admin-overlay').classList.add('open');
+  document.getElementById('password-screen').style.display = 'flex';
+  document.getElementById('admin-content').style.display   = 'none';
+  document.getElementById('admin-password-input').value    = '';
+}
 function closeAdmin() { document.getElementById('admin-overlay').classList.remove('open'); }
-
 function checkPassword() {
-    const input = document.getElementById('admin-password-input').value;
-    if (input === config.password) {
-        document.getElementById('password-screen').style.display = 'none';
-        document.getElementById('admin-content').style.display = 'block';
-        renderAdminList();
-    } else { showToast("Senha incorreta"); }
+  if (document.getElementById('admin-password-input').value === config.password) {
+    document.getElementById('password-screen').style.display = 'none';
+    document.getElementById('admin-content').style.display   = 'block';
+    loadAdminContent();
+  } else { showToast('Senha incorreta'); }
 }
-
+function loadAdminContent() {
+  document.getElementById('cfg-names').value        = config.names;
+  document.getElementById('cfg-date').value         = config.date;
+  document.getElementById('cfg-email').value        = config.email;
+  document.getElementById('cfg-ejs-public').value   = config.ejsPublic   || '';
+  document.getElementById('cfg-ejs-service').value  = config.ejsService  || '';
+  document.getElementById('cfg-ejs-template').value = config.ejsTemplate || '';
+  renderAdminList();
+}
 async function addGift() {
-    const name = document.getElementById('new-name').value;
-    const price = document.getElementById('new-price').value;
-    const category = document.getElementById('new-category').value;
-    const image = document.getElementById('new-photo-url').value;
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { showToast('Nome do item é obrigatório'); return; }
+  const image = window._uploadedPhotoBase64 || document.getElementById('new-photo-url').value.trim() || '';
+  
+  // Salva no Firebase
+  await db.collection("presentes").add({
+    name: name,
+    description: document.getElementById('new-desc').value.trim(),
+    price: document.getElementById('new-price').value.trim(),
+    category: document.getElementById('new-category').value.trim(),
+    image: image,
+    buyLink: document.getElementById('new-buy-link').value.trim(),
+    taken: false
+  });
 
-    const { error } = await supabase.from('gifts').insert([{ name, price, category, image }]);
-
-    if (!error) {
-        showToast("Item adicionado!");
-        document.getElementById('new-name').value = '';
-        await fetchGifts();
-        renderAdminList();
-    }
+  ['new-name','new-desc','new-price','new-category','new-photo-url','new-buy-link'].forEach(id => document.getElementById(id).value = '');
+  clearPhoto(); showToast('Item adicionado!');
 }
-
 async function deleteGift(id) {
-    if(confirm("Remover este item?")) {
-        await supabase.from('gifts').delete().eq('id', id);
-        await fetchGifts();
-        renderAdminList();
-    }
+  if (!confirm('Remover este item?')) return;
+  // Exclui do Firebase
+  await db.collection("presentes").doc(id).delete();
+  showToast('Item removido!');
 }
-
 function renderAdminList() {
-    const container = document.getElementById('admin-gift-list');
-    container.innerHTML = gifts.map(g => `
-        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee">
-            <span>${g.name} ${g.taken ? '✅' : ''}</span>
-            <button onclick="deleteGift('${g.id}')" style="color:red; background:none; border:none; cursor:pointer">Excluir</button>
-        </div>
-    `).join('');
+  const ul      = document.getElementById('admin-gift-list');
+  const takenUl = document.getElementById('admin-taken-list');
+  document.getElementById('admin-count').textContent = gifts.length;
+  ul.innerHTML = gifts.length ? gifts.map(g => `
+    <li class="admin-gift-item">
+      <span class="item-name">🏠 ${g.name}${g.price ? ` <small style="color:var(--muted)">${g.price}</small>` : ''}</span>
+      ${g.taken ? `<span class="taken-tag">✓ Escolhido</span>` : ''}
+      <button class="edit-btn" onclick="openEditModal('${g.id}')">✏ Editar</button>
+      <button class="del-btn"  onclick="deleteGift('${g.id}')" title="Remover">✕</button>
+    </li>
+  `).join('') : '<li style="padding:10px;font-size:0.85rem;color:var(--muted)">Nenhum item cadastrado.</li>';
+  const taken = gifts.filter(g => g.taken);
+  takenUl.innerHTML = taken.length ? taken.map(g => `
+    <li class="admin-gift-item" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <strong style="font-size:0.9rem">${g.name}</strong>
+      <span style="font-size:0.8rem;color:var(--muted)">
+        🕐 ${g.takenAt}${g.takenMessage ? `<br>💬 "${g.takenMessage}"` : ''}
+      </span>
+    </li>
+  `).join('') : '<li style="padding:10px;font-size:0.85rem;color:var(--muted)">Nenhum item foi selecionado ainda.</li>';
 }
 
+// EDIT MODAL
+function openEditModal(id) {
+  const g = gifts.find(x => x.id === id);
+  if (!g) return;
+  document.getElementById('edit-id').value        = id;
+  document.getElementById('edit-name').value      = g.name;
+  document.getElementById('edit-desc').value      = g.description || '';
+  document.getElementById('edit-price').value     = g.price       || '';
+  document.getElementById('edit-category').value  = g.category    || '';
+  document.getElementById('edit-buy-link').value  = g.buyLink     || '';
+  document.getElementById('edit-photo-url').value = '';
+  editPhotoBase64 = null;
+  document.getElementById('edit-upload-label').textContent = 'Clique para trocar a foto';
+  const prev    = document.getElementById('edit-photo-preview');
+  const prevImg = document.getElementById('edit-photo-preview-img');
+  if (g.image) { prevImg.src = g.image; prev.style.display = 'block'; }
+  else { prev.style.display = 'none'; }
+  document.getElementById('edit-modal-overlay').classList.add('open');
+}
+function closeEditModal() {
+  document.getElementById('edit-modal-overlay').classList.remove('open');
+  editPhotoBase64 = null;
+}
+async function saveEdit() {
+  const id   = document.getElementById('edit-id').value;
+  const g    = gifts.find(x => x.id === id);
+  if (!g) return;
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { showToast('Nome do item é obrigatório'); return; }
+  const urlVal = document.getElementById('edit-photo-url').value.trim();
+  const prevVisible = document.getElementById('edit-photo-preview').style.display !== 'none';
+  const image = editPhotoBase64 || urlVal || (prevVisible ? g.image : '');
+  
+  // Atualiza no Firebase
+  await db.collection("presentes").doc(id).update({
+    name: name,
+    description: document.getElementById('edit-desc').value.trim(),
+    price: document.getElementById('edit-price').value.trim(),
+    category: document.getElementById('edit-category').value.trim(),
+    buyLink: document.getElementById('edit-buy-link').value.trim(),
+    image: image
+  });
+
+  closeEditModal(); showToast('Item atualizado!');
+}
+function handleEditPhotoUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    editPhotoBase64 = e.target.result;
+    document.getElementById('edit-photo-preview-img').src = e.target.result;
+    document.getElementById('edit-photo-preview').style.display = 'block';
+    document.getElementById('edit-upload-label').textContent = file.name;
+    document.getElementById('edit-photo-url').value = '';
+  };
+  reader.readAsDataURL(file);
+}
+function previewEditUrl(input) {
+  if (input.value.startsWith('http')) {
+    document.getElementById('edit-photo-preview-img').src = input.value;
+    document.getElementById('edit-photo-preview').style.display = 'block';
+    editPhotoBase64 = null;
+  } else { document.getElementById('edit-photo-preview').style.display = 'none'; }
+}
+function clearEditPhoto() {
+  editPhotoBase64 = null;
+  document.getElementById('edit-photo-file').value = '';
+  document.getElementById('edit-upload-label').textContent = 'Clique para trocar a foto';
+  document.getElementById('edit-photo-preview').style.display = 'none';
+  document.getElementById('edit-photo-preview-img').src = '';
+  document.getElementById('edit-photo-url').value = '';
+}
+
+// PHOTO UPLOAD (ADD)
+window._uploadedPhotoBase64 = null;
+function handlePhotoUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._uploadedPhotoBase64 = e.target.result;
+    document.getElementById('photo-preview-img').src = e.target.result;
+    document.getElementById('photo-preview').style.display = 'block';
+    document.getElementById('upload-label').textContent = file.name;
+    document.getElementById('new-photo-url').value = '';
+  };
+  reader.readAsDataURL(file);
+}
+function clearPhoto() {
+  window._uploadedPhotoBase64 = null;
+  document.getElementById('new-photo-file').value = '';
+  document.getElementById('upload-label').textContent = 'Clique para fazer upload de foto';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-preview-img').src = '';
+}
+document.getElementById('new-photo-url').addEventListener('input', function() {
+  if (this.value.startsWith('http')) {
+    document.getElementById('photo-preview-img').src = this.value;
+    document.getElementById('photo-preview').style.display = 'block';
+    window._uploadedPhotoBase64 = null;
+  } else { document.getElementById('photo-preview').style.display = 'none'; }
+});
+
+// CURRENCY MASK
+function maskCurrency(el) {
+  let v = el.value.replace(/\D/g, '');
+  if (!v) { el.value = ''; return; }
+  v = (parseInt(v, 10) / 100).toFixed(2);
+  el.value = 'R$ ' + v.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// TOAST
 function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-init();
+document.getElementById('guest-modal').addEventListener('click', e => { if (e.target.id === 'guest-modal') closeModal(); });
+document.getElementById('admin-overlay').addEventListener('click', e => { if (e.target.id === 'admin-overlay') closeAdmin(); });
+document.getElementById('edit-modal-overlay').addEventListener('click', e => { if (e.target.id === 'edit-modal-overlay') closeEditModal(); });
 </script>
 </body>
 </html>
