@@ -139,9 +139,9 @@
 
 <header>
   <span class="header-ornament">✦ ✦ ✦</span>
-  <h1 id="host-names"><em>Ana</em></h1>
+  <h1 id="host-names"><em>Ana Paula</em></h1>
   <p>Chá de Casa Nova — Lista de Presentes</p>
-  <div class="date-badge" id="event-date-display">14 de Junho de 2026</div>
+  <div class="date-badge" id="event-date-display">25 de Abril de 2026</div>
   <button class="admin-btn" onclick="openAdmin()">⚙ Admin</button>
 </header>
 
@@ -300,7 +300,10 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let gifts = [];
-let config = JSON.parse(localStorage.getItem('cdn_config') || '{"names":"Ana","date":"Junho de 2026","email":"","password":"1234","ejsPublic":"","ejsService":"","ejsTemplate":""}');
+
+// AQUI ESTÁ A MÁGICA: O CÓDIGO AGORA JÁ NASCE COM OS DADOS CORRETOS DE VOCÊS!
+let config = JSON.parse(localStorage.getItem('cdn_config') || '{"names":"Ana Paula","date":"25 de Abril de 2026","email":"jhomadersonksi@gmail.com","password":"1234","ejsPublic":"PxUA_vj29o_tqEJAuRyF8","ejsService":"service_eaeqlsc","ejsTemplate":"template_eh82n2u"}');
+
 let selectedGiftId = null;
 let editPhotoBase64 = null;
 
